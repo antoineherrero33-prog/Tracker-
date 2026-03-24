@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Mon Suivi">
+<meta name="theme-color" content="#080808">
+<title>Mon Suivi Athlétique</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #080808; --bg2: #0f0f0f; --bg3: #161616;
+    --border: #222; --orange: #f97316; --blue: #3b82f6;
+    --cyan: #06b6d4; --green: #10b981; --purple: #8b5cf6;
+    --red: #ef4444; --text: #e8e0d8; --muted: #555;
+    --safe-top: env(safe-area-inset-top, 0px);
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; background: var(--bg); color: var(--text); font-family: 'DM Mono', monospace; overscroll-behavior: none; }
+  .header { background: linear-gradient(160deg, #111 0%, #1a1209 100%); border-bottom: 1px solid var(--border); padding: calc(var(--safe-top) + 20px) 20px 20px; }
+  .header-label { font-size: 9px; letter-spacing: 4px; color: var(--orange); text-transform: uppercase; margin-bottom: 4px; }
+  .header h1 { font-family: 'Playfair Display', serif; font-size: 26px; color: #fff; line-height: 1.1; }
+  .header h1 span { color: var(--orange); }
+  .header-stats { display: flex; gap: 18px; margin-top: 14px; flex-wrap: wrap; }
+  .stat-val { font-size: 16px; font-weight: 500; color: var(--orange); }
+  .stat-lbl { font-size: 8px; color: var(--muted); letter-spacing: 2px; text-transform: uppercase; }
+  .tabs { background: var(--bg2); border-bottom: 1px solid var(--border); display: flex; position: sticky; top: 0; z-index: 100; }
+  .tab { flex: 1; padding: 14px 4px; background: none; border: none; border-bottom: 2px solid transparent; cursor: pointer; color: var(--muted); font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 2px; text-transform: uppercase; }
+  .tab.active { color: var(--orange); border-bottom-color: var(--orange); }
+  .content { max-width: 600px; margin: 0 auto; padding: 20px 16px calc(var(--safe-bottom) + 30px); }
+  .panel { display: none; } .panel.active { display: block; }
+  .card { background: var(--bg3); border-radius: 12px; padding: 16px; border: 1px solid var(--border); margin-bottom: 14px; }
+  .card-dark { background: #0a0a0a; border-radius: 8px; padding: 12px; margin-bottom: 8px; }
+  .lbl { font-size: 9px; color: var(--muted); letter-spacing: 3px; text-transform: uppercase; margin-bottom: 8px; }
+  input[type="number"], input[type="text"] { background: #0a0a0a; border: 1px solid var(--border); border-radius: 8px; color: var(--text); padding: 12px 14px; font-family: 'DM Mono', monospace; font-size: 15px; width: 100%; outline: none; -webkit-appearance: none; }
+  input:focus { border-color: var(--orange); }
+  input::placeholder { color: var(--muted); }
+  .btn { padding: 12px 20px; border-radius: 8px; border: none; cursor: pointer; font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 2px; text-transform: uppercase; font-weight: 500; background: var(--bg3); color: var(--muted); }
+  .btn.primary { background: var(--orange); color: #000; }
+  .btn.full { width: 100%; }
+  .btn.small { padding: 8px 12px; font-size: 9px; }
+  .btn.active-blue { background: var(--blue); color: #fff; }
+  .btn.active-cyan { background: var(--cyan); color: #000; }
+  .btn.active-green { background: var(--green); color: #000; }
+  .btn.active-purple { background: var(--purple); color: #fff; }
+  .btn.active-orange { background: var(--orange); color: #000; }
+  .status-ok { margin-top: 10px; padding: 8px 12px; border-radius: 6px; background: #10b98122; border: 1px solid #10b98144; font-size: 11px; color: var(--green); }
+  .status-err { margin-top: 10px; padding: 8px 12px; border-radius: 6px; background: #ef444422; border: 1px solid #ef444444; font-size: 11px; color: var(--red); }
+  .g2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .g3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+  .g4 { display: grid; grid-template-columns: repeat(4,1fr); gap: 8px; }
+  .g7 { display: grid; grid-template-columns: repeat(7,1fr); gap: 6px; }
+  .bar-wrap { height: 5px; background: #1a1a1a; border-radius: 3px; }
+  .bar-fill { height: 100%; border-radius: 3px; transition: width 0.4s ease; }
+  .row { display: flex; gap: 8px; align-items: center; }
+  .row-between { display: flex; justify-content: space-between; align-items: baseline; }
+  .day-card { background: #0a0a0a; border-radius: 10px; padding: 12px 4px; text-align: center; cursor: pointer; border: 1px solid var(--border); user-select: none; }
+  .day-name { font-size: 14px; font-weight: 500; color: #444; }
+  .day-type { font-size: 7px; color: #333; margin-top: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .day-check { font-size: 14px; margin-top: 2px; }
+  .type-btns { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
+  .scrollable { max-height: 220px; overflow-y: auto; }
+  .hist-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #161616; }
+  .hist-date { font-size: 11px; color: var(--muted); }
+  .hist-val { font-size: 14px; font-weight: 500; color: var(--text); }
+  .target-box { background: #0a0a0a; border-radius: 8px; padding: 12px; margin-bottom: 14px; }
+  .target-item { text-align: center; }
+  .target-val { font-size: 15px; font-weight: 500; color: #fff; }
+  .target-lbl { font-size: 9px; color: var(--muted); margin-top: 2px; }
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="header-label">Tracker · Recomposition 2025</div>
+  <h1>Mon Suivi <span>Athlétique</span></h1>
+  <div class="header-stats">
+    <div><div class="stat-val" id="hdr-poids">—</div><div class="stat-lbl">Poids actuel</div></div>
+    <div><div class="stat-val" id="hdr-avg">—</div><div class="stat-lbl">Moy. 7 jours</div></div>
+    <div><div class="stat-val" id="hdr-bench">—</div><div class="stat-lbl">Meilleur bench</div></div>
+  </div>
+</div>
+<div class="tabs">
+  <button class="tab active" onclick="showTab('poids',this)">Poids</button>
+  <button class="tab" onclick="showTab('macros',this)">Macros</button>
+  <button class="tab" onclick="showTab('bench',this)">Bench</button>
+  <button class="tab" onclick="showTab('semaine',this)">Semaine</button>
+</div>
+<div class="content">
+  <div id="tab-poids" class="panel active">
+    <div class="card">
+      <div class="lbl">Poids aujourd'hui (kg)</div>
+      <div class="row" style="margin-bottom:10px">
+        <input type="number" id="poids-input" placeholder="ex: 79.8" step="0.1" style="flex:1">
+        <button class="btn primary" onclick="savePoids()">Sauver</button>
+      </div>
+      <div id="poids-status"></div>
+    </div>
+    <div class="g3" style="margin-bottom:14px">
+      <div class="card" style="text-align:center;margin-bottom:0"><div style="font-size:20px;font-weight:500;color:var(--orange)" id="p-last">—</div><div class="lbl" style="margin:4px 0 0">Dernier</div></div>
+      <div class="card" style="text-align:center;margin-bottom:0"><div style="font-size:20px;font-weight:500;color:var(--blue)" id="p-avg">—</div><div class="lbl" style="margin:4px 0 0">Moy. 7j</div></div>
+      <div class="card" style="text-align:center;margin-bottom:0"><div style="font-size:20px;font-weight:500" id="p-diff">—</div><div class="lbl" style="margin:4px 0 0">Total</div></div>
+    </div>
+    <div class="card" id="chart-card" style="display:none">
+      <div class="lbl">Évolution (30 jours)</div>
+      <canvas id="poids-chart" width="540" height="160" style="width:100%;height:160px"></canvas>
+    </div>
+    <div class="card">
+      <div class="row-between" style="margin-bottom:8px">
+        <div class="lbl" style="margin:0">Progression vers 70 kg</div>
+        <div style="font-size:11px;color:var(--green)" id="obj-pct">—</div>
+      </div>
+      <div class="bar-wrap"><div class="bar-fill" id="obj-bar" style="background:var(--green);width:0%"></div></div>
+      <div style="display:flex;justify-content:space-between;margin-top:6px;font-size:10px;color:var(--muted)"><span>80.4 kg</span><span>70 kg</span></div>
+    </div>
+    <div class="card" id="poids-hist-card" style="display:none">
+      <div class="lbl">Historique</div>
+      <div class="scrollable" id="poids-hist"></div>
+    </div>
+  </div>
+  <div id="tab-macros" class="panel">
+    <div class="card">
+      <div class="lbl">Type de journée</div>
+      <div class="type-btns" id="type-btns">
+        <button class="btn small active-orange" onclick="setDayType('muscu',this)">Muscu</button>
+        <button class="btn small" onclick="setDayType('run_court',this)">Run court</button>
+        <button class="btn small" onclick="setDayType('fractionne',this)">Fractionné ⚡</button>
+        <button class="btn small" onclick="setDayType('run_long',this)">Run long</button>
+        <button class="btn small" onclick="setDayType('repos',this)">Repos</button>
+      </div>
+      <div class="target-box">
+        <div class="lbl" id="target-lbl" style="color:var(--orange)">Objectifs — Muscu</div>
+        <div class="g4">
+          <div class="target-item"><div class="target-val" id="t-kcal">2150</div><div class="target-lbl">Kcal</div></div>
+          <div class="target-item"><div class="target-val" id="t-p">175g</div><div class="target-lbl">Prot.</div></div>
+          <div class="target-item"><div class="target-val" id="t-c">195g</div><div class="target-lbl">Glu.</div></div>
+          <div class="target-item"><div class="target-val" id="t-f">75g</div><div class="target-lbl">Lip.</div></div>
+        </div>
+      </div>
+      <div class="lbl">Saisie du jour</div>
+      <div class="g2" style="margin-bottom:10px">
+        <div><div style="font-size:9px;color:var(--muted);margin-bottom:4px">KCAL</div><input type="number" id="m-kcal" placeholder="2150"></div>
+        <div><div style="font-size:9px;color:var(--muted);margin-bottom:4px">PROTÉINES (g)</div><input type="number" id="m-p" placeholder="175"></div>
+        <div><div style="font-size:9px;color:var(--muted);margin-bottom:4px">GLUCIDES (g)</div><input type="number" id="m-c" placeholder="195"></div>
+        <div><div style="font-size:9px;color:var(--muted);margin-bottom:4px">LIPIDES (g)</div><input type="number" id="m-f" placeholder="75"></div>
+      </div>
+      <button class="btn primary full" onclick="saveMacros()">Sauvegarder</button>
+      <div id="macros-status"></div>
+    </div>
+    <div class="card" id="macros-bilan" style="display:none">
+      <div class="lbl">Bilan aujourd'hui</div>
+      <div id="macros-bars"></div>
+    </div>
+  </div>
+  <div id="tab-bench" class="panel">
+    <div class="card">
+      <div class="lbl">Nouvelle séance</div>
+      <div class="g3" style="margin-bottom:10px">
+        <div><div style="font-size:9px;color:var(--muted);margin-bottom:4px">CHARGE (kg)</div><input type="number" id="b-charge" placeholder="100"></div>
+        <div><div style="font-size:9px;color:var(--muted);margin-bottom:4px">SÉRIES</div><input type="number" id="b-sets" placeholder="5"></div>
+        <div><div style="font-size:9px;color:var(--muted);margin-bottom:4px">REPS</div><input type="number" id="b-reps" placeholder="3"></div>
+      </div>
+      <div style="margin-bottom:10px"><div style="font-size:9px;color:var(--muted);margin-bottom:4px">NOTE</div><input type="text" id="b-note" placeholder="ex: facile..."></div>
+      <button class="btn primary full" onclick="saveBench()">Sauvegarder la séance</button>
+      <div id="bench-status"></div>
+    </div>
+    <div class="g2" style="margin-bottom:14px">
+      <div class="card" style="text-align:center;margin-bottom:0"><div style="font-size:22px;font-weight:500;color:var(--orange)" id="b-best">—</div><div class="lbl" style="margin:4px 0 0">Meilleure charge</div></div>
+      <div class="card" style="text-align:center;margin-bottom:0"><div style="font-size:22px;font-weight:500;color:var(--blue)">110 kg</div><div class="lbl" style="margin:4px 0 0">Objectif</div></div>
+    </div>
+    <div class="card" id="bench-prog-card" style="display:none">
+      <div class="row-between" style="margin-bottom:8px"><div class="lbl" style="margin:0">Progression vers 110 kg</div><div style="font-size:11px;color:var(--green)" id="bench-pct">—</div></div>
+      <div class="bar-wrap" style="height:8px"><div class="bar-fill" id="bench-bar" style="background:linear-gradient(90deg,var(--orange),var(--green));width:0%"></div></div>
+    </div>
+    <div class="card" id="bench-hist-card" style="display:none">
+      <div class="lbl">Historique séances</div>
+      <div class="scrollable" id="bench-hist"></div>
+    </div>
+  </div>
+  <div id="tab-semaine" class="panel">
+    <div class="card">
+      <div class="row-between" style="margin-bottom:10px">
+        <div><div style="font-size:28px;font-weight:500;color:var(--orange)"><span id="week-done">0</span><span style="font-size:16px;color:var(--muted)">/5</span></div><div style="font-size:10px;color:var(--muted)">séances complétées</div></div>
+        <button class="btn small" onclick="resetWeek()">Reset</button>
+      </div>
+      <div class="bar-wrap" style="height:6px;margin-bottom:20px"><div class="bar-fill" id="week-bar" style="background:var(--orange);width:0%"></div></div>
+      <div class="g7" id="week-grid"></div>
+    </div>
+    <div class="card">
+      <div class="lbl">Règles de décision</div>
+      <div class="card-dark"><div style="font-size:10px;color:var(--orange);margin-bottom:4px">SI : Bench stagne 2 sem.</div><div style="font-size:11px;color:#888">→ Vérifier glucides pré-séance + sommeil</div></div>
+      <div class="card-dark"><div style="font-size:10px;color:var(--orange);margin-bottom:4px">SI : Poids stagne 3 sem.</div><div style="font-size:11px;color:#888">→ -100 kcal sur jours repos uniquement</div></div>
+      <div class="card-dark"><div style="font-size:10px;color:var(--orange);margin-bottom:4px">SI : Perte > 1 kg/sem.</div><div style="font-size:11px;color:#888">→ +150 kcal sur jours run</div></div>
+      <div class="card-dark" style="margin-bottom:0"><div style="font-size:10px;color:var(--orange);margin-bottom:4px">SI : Body Battery &lt; 30 (2j)</div><div style="font-size:11px;color:#888">→ Transformer un run en repos actif</div></div>
+    </div>
+  </div>
+</div>
+<script>
+const TARGETS={muscu:{kcal:2150,p:175,c:195,f:75,label:'Muscu',color:'var(--orange)'},run_court:{kcal:2200,p:175,c:210,f:72,label:'Run court',color:'var(--blue)'},fractionne:{kcal:2300,p:175,c:230,f:72,label:'Fractionné ⚡',color:'var(--cyan)'},run_long:{kcal:2400,p:175,c:255,f:80,label:'Run long',color:'var(--green)'},repos:{kcal:1900,p:175,c:120,f:65,label:'Repos',color:'var(--purple)'}};
+const WEEK_DAYS=[{key:'lun',label:'L',type:'Run',color:'#3b82f6'},{key:'mar',label:'Ma',type:'Upper A',color:'#f97316'},{key:'mer',label:'Me',type:'Frac.',color:'#06b6d4'},{key:'jeu',label:'J',type:'Upper B',color:'#f97316'},{key:'ven',label:'V',type:'Run L',color:'#10b981'},{key:'sam',label:'S',type:'Repos',color:'#444'},{key:'dim',label:'D',type:'Repos',color:'#444'}];
+let currentDayType='muscu';
+function load(k,fb){try{const v=localStorage.getItem(k);return v?JSON.parse(v):fb;}catch(e){return fb;}}
+function save(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true;}catch(e){return false;}}
+let weights=load('weights',{});
+let macros=load('macros',{});
+let bench=load('bench',[]);
+let weeks=load('weeks',{});
+function today(){return new Date().toISOString().split('T')[0];}
+function fmt(d){const[,m,day]=d.split('-');return`${day}/${m}`;}
+function weekKey(){const d=new Date();const s=new Date(d.setDate(d.getDate()-((d.getDay()+6)%7)));return s.toISOString().split('T')[0];}
+function showStatus(id,msg,ok){const el=document.getElementById(id);el.className=ok?'status-ok':'status-err';el.textContent=msg;setTimeout(()=>{el.textContent='';el.className='';},3000);}
+function showTab(name,btn){document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));document.getElementById('tab-'+name).classList.add('active');btn.classList.add('active');}
+function savePoids(){const val=parseFloat(document.getElementById('poids-input').value);if(isNaN(val)){showStatus('poids-status','❌ Entre un poids valide',false);return;}weights[today()]=val;if(save('weights',weights)){document.getElementById('poids-input').value='';showStatus('poids-status','✓ Sauvegardé',true);renderPoids();updateHeader();}else{showStatus('poids-status','❌ Erreur',false);}}
+function renderPoids(){const sorted=Object.entries(weights).sort(([a],[b])=>a.localeCompare(b));const last=sorted.length?sorted[sorted.length-1][1]:null;const avg7=sorted.length>=2?(sorted.slice(-7).reduce((s,[,v])=>s+v,0)/Math.min(sorted.length,7)).toFixed(1):null;const diff=sorted.length>=2?(sorted[sorted.length-1][1]-sorted[0][1]).toFixed(1):null;document.getElementById('p-last').textContent=last?last+' kg':'—';document.getElementById('p-avg').textContent=avg7?avg7+' kg':'—';const de=document.getElementById('p-diff');de.textContent=diff?(diff>0?'+'+diff:diff)+' kg':'—';de.style.color=diff<0?'var(--green)':diff>0?'var(--red)':'var(--muted)';if(last){const pct=Math.max(0,Math.min(100,((80.4-last)/(80.4-70))*100));document.getElementById('obj-bar').style.width=pct+'%';document.getElementById('obj-pct').textContent=pct.toFixed(0)+'%';}const recent=sorted.slice(-30);if(recent.length>1){document.getElementById('chart-card').style.display='block';drawChart(recent);}if(sorted.length){document.getElementById('poids-hist-card').style.display='block';document.getElementById('poids-hist').innerHTML=sorted.slice().reverse().map(([d,v])=>`<div class="hist-row"><span class="hist-date">${fmt(d)}</span><span class="hist-val">${v} kg</span></div>`).join('');}}
+function drawChart(data){const canvas=document.getElementById('poids-chart');const ctx=canvas.getContext('2d');const W=canvas.width,H=canvas.height;const pad={top:16,right:16,bottom:28,left:44};const iW=W-pad.left-pad.right,iH=H-pad.top-pad.bottom;ctx.clearRect(0,0,W,H);const vals=data.map(([,v])=>v);const minV=Math.min(...vals)-0.5,maxV=Math.max(...vals)+0.5;const xS=i=>pad.left+i*(iW/(data.length-1));const yS=v=>pad.top+iH-((v-minV)/(maxV-minV))*iH;const grad=ctx.createLinearGradient(0,pad.top,0,pad.top+iH);grad.addColorStop(0,'#f9731644');grad.addColorStop(1,'#f9731600');ctx.beginPath();ctx.moveTo(xS(0),yS(vals[0]));data.forEach(([,v],i)=>ctx.lineTo(xS(i),yS(v)));ctx.lineTo(xS(data.length-1),pad.top+iH);ctx.lineTo(xS(0),pad.top+iH);ctx.closePath();ctx.fillStyle=grad;ctx.fill();ctx.beginPath();ctx.strokeStyle='#f97316';ctx.lineWidth=2;ctx.lineJoin='round';data.forEach(([,v],i)=>i===0?ctx.moveTo(xS(i),yS(v)):ctx.lineTo(xS(i),yS(v)));ctx.stroke();data.forEach(([,v],i)=>{ctx.beginPath();ctx.arc(xS(i),yS(v),3,0,Math.PI*2);ctx.fillStyle='#f97316';ctx.fill();});ctx.fillStyle='#555';ctx.font='9px monospace';ctx.textAlign='right';[minV+0.5,(minV+maxV)/2,maxV-0.5].forEach(v=>ctx.fillText(v.toFixed(1),pad.left-6,yS(v)+3));ctx.textAlign='center';const step=Math.ceil(data.length/5);data.forEach(([d],i)=>{if(i%step===0||i===data.length-1)ctx.fillText(fmt(d),xS(i),H-6);});}
+function setDayType(type,btn){currentDayType=type;document.querySelectorAll('#type-btns .btn').forEach(b=>b.className='btn small');const cm={muscu:'active-orange',run_court:'active-blue',fractionne:'active-cyan',run_long:'active-green',repos:'active-purple'};btn.classList.add(cm[type]);const t=TARGETS[type];document.getElementById('target-lbl').textContent='Objectifs — '+t.label;document.getElementById('target-lbl').style.color=t.color;document.getElementById('t-kcal').textContent=t.kcal;document.getElementById('t-p').textContent=t.p+'g';document.getElementById('t-c').textContent=t.c+'g';document.getElementById('t-f').textContent=t.f+'g';}
+function saveMacros(){const entry={dayType:currentDayType,kcal:+document.getElementById('m-kcal').value||0,p:+document.getElementById('m-p').value||0,c:+document.getElementById('m-c').value||0,f:+document.getElementById('m-f').value||0};macros[today()]=entry;if(save('macros',macros)){showStatus('macros-status','✓ Sauvegardé',true);renderMacros();}else{showStatus('macros-status','❌ Erreur',false);}}
+function renderMacros(){const d=macros[today()];if(!d)return;const t=TARGETS[d.dayType];const bilan=document.getElementById('macros-bilan');bilan.style.display='block';const pct=(v,tg)=>Math.min(100,Math.round(v/tg*100));const color=(v,tg)=>v>=tg*0.95?'var(--green)':v>=tg*0.75?'#f59e0b':'var(--red)';document.getElementById('macros-bars').innerHTML=[['Kcal',d.kcal,t.kcal,''],['Protéines',d.p,t.p,'g'],['Glucides',d.c,t.c,'g'],['Lipides',d.f,t.f,'g']].map(([label,val,tgt,unit])=>`<div style="margin-bottom:12px"><div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="font-size:11px;color:#aaa">${label}</span><span style="font-size:11px;color:${color(val,tgt)}">${val}${unit}/${tgt}${unit} (${pct(val,tgt)}%)</span></div><div class="bar-wrap"><div class="bar-fill" style="background:${color(val,tgt)};width:${pct(val,tgt)}%"></div></div></div>`).join('');}
+function saveBench(){const charge=+document.getElementById('b-charge').value;if(!charge){showStatus('bench-status','❌ Entre une charge',false);return;}const entry={date:today(),charge,sets:+document.getElementById('b-sets').value||0,reps:+document.getElementById('b-reps').value||0,note:document.getElementById('b-note').value};bench.push(entry);if(save('bench',bench)){['b-charge','b-sets','b-reps','b-note'].forEach(id=>document.getElementById(id).value='');showStatus('bench-status','✓ Sauvegardé',true);renderBench();updateHeader();}else{showStatus('bench-status','❌ Erreur',false);}}
+function renderBench(){if(!bench.length)return;const best=Math.max(...bench.map(e=>e.charge));document.getElementById('b-best').textContent=best+' kg';const pct=Math.min(100,Math.round(best/110*100));document.getElementById('bench-prog-card').style.display='block';document.getElementById('bench-bar').style.width=pct+'%';document.getElementById('bench-pct').textContent=pct+'%';document.getElementById('bench-hist-card').style.display='block';document.getElementById('bench-hist').innerHTML=bench.slice().reverse().map(e=>`<div class="hist-row"><div><span class="hist-date">${fmt(e.date)}</span>${e.note?`<span style="font-size:10px;color:var(--muted);margin-left:8px;font-style:italic">${e.note}</span>`:''}</div><div><span style="font-size:14px;font-weight:500;color:var(--orange)">${e.charge} kg</span><span style="font-size:10px;color:var(--muted);margin-left:6px">${e.sets}×${e.reps}</span></div></div>`).join('');}
+function renderWeek(){const wk=weekKey();const current=weeks[wk]||{};const workDays=WEEK_DAYS.filter(d=>d.type!=='Repos');const workDone=workDays.filter(d=>current[d.key]).length;document.getElementById('week-done').textContent=workDone;document.getElementById('week-bar').style.width=(workDone/workDays.length*100)+'%';document.getElementById('week-grid').innerHTML=WEEK_DAYS.map(d=>{const done=!!current[d.key];return`<div class="day-card" onclick="toggleDay('${d.key}')" style="${done?`background:${d.color}22;border-color:${d.color}`:''}"><div class="day-name" style="color:${done?d.color:'#444'}">${d.label}</div><div class="day-check">${done?'✓':''}</div><div class="day-type" style="color:${done?d.color:'#333'}">${d.type}</div></div>`;}).join('');}
+function toggleDay(key){const wk=weekKey();if(!weeks[wk])weeks[wk]={};weeks[wk][key]=!weeks[wk][key];save('weeks',weeks);renderWeek();}
+function resetWeek(){if(!confirm('Reset la semaine ?'))return;weeks[weekKey()]={};save('weeks',weeks);renderWeek();}
+function updateHeader(){const sorted=Object.entries(weights).sort(([a],[b])=>a.localeCompare(b));const last=sorted.length?sorted[sorted.length-1][1]:null;const avg7=sorted.length>=2?(sorted.slice(-7).reduce((s,[,v])=>s+v,0)/Math.min(sorted.length,7)).toFixed(1):null;document.getElementById('hdr-poids').textContent=last?last+' kg':'—';document.getElementById('hdr-avg').textContent=avg7?avg7+' kg':'—';const best=bench.length?Math.max(...bench.map(e=>e.charge)):null;document.getElementById('hdr-bench').textContent=best?best+' kg':'—';}
+renderPoids();renderMacros();renderBench();renderWeek();updateHeader();
+</script>
+</body>
+</html>

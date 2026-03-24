@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Programme Athlétique — Recomposition</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #080808; color: #e8e0d8; font-family: Georgia, 'Times New Roman', serif; padding-bottom: 80px; }
+
+  .header { background: linear-gradient(135deg, #111 0%, #1a1a1a 100%); border-bottom: 1px solid #2a2a2a; padding: 32px 20px 24px; }
+  .header-label { font-size: 11px; letter-spacing: 4px; color: #f97316; font-family: monospace; text-transform: uppercase; margin-bottom: 4px; }
+  .header h1 { font-size: 28px; font-weight: 700; color: #fff; line-height: 1.2; }
+  .header h1 span { color: #f97316; }
+  .stats-row { margin-top: 16px; display: flex; gap: 20px; flex-wrap: wrap; }
+  .stat-val { font-size: 18px; font-weight: 700; color: #f97316; }
+  .stat-label { font-size: 11px; color: #666; letter-spacing: 1px; text-transform: uppercase; font-family: monospace; }
+
+  .tabs { background: #0e0e0e; border-bottom: 1px solid #1f1f1f; position: sticky; top: 0; z-index: 10; display: flex; overflow-x: auto; }
+  .tab { padding: 14px 18px; background: none; border: none; border-bottom: 2px solid transparent; cursor: pointer; color: #555; font-family: monospace; font-size: 11px; letter-spacing: 2px; text-transform: uppercase; white-space: nowrap; transition: color 0.2s; }
+  .tab.active { color: #f97316; border-bottom-color: #f97316; }
+
+  .content { max-width: 680px; margin: 0 auto; padding: 24px 16px; }
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  .section-title { font-size: 11px; color: #555; letter-spacing: 3px; font-family: monospace; text-transform: uppercase; margin-bottom: 14px; padding-bottom: 8px; border-bottom: 1px solid #1a1a1a; }
+  .section { margin-bottom: 28px; }
+
+  .card { background: #111; border-radius: 8px; padding: 16px; margin-bottom: 12px; border: 1px solid #1f1f1f; }
+  .card-dark { background: #0e0e0e; border-radius: 8px; padding: 16px; margin-bottom: 12px; border: 1px solid #1a1a1a; }
+
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+  .grid-7 { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
+
+  .badge { font-size: 10px; padding: 2px 8px; border-radius: 4px; font-family: monospace; }
+  .tag { display: inline-block; font-size: 9px; background: #ef444422; color: #ef4444; padding: 3px 8px; border-radius: 4px; font-family: monospace; letter-spacing: 1px; }
+
+  .bar { height: 3px; background: #222; border-radius: 2px; margin-top: 8px; }
+  .bar-fill { height: 100%; border-radius: 2px; }
+
+  .session-btns { display: flex; gap: 8px; margin-bottom: 20px; }
+  .session-btn { padding: 10px 24px; border-radius: 6px; border: none; cursor: pointer; font-family: monospace; font-size: 12px; letter-spacing: 2px; text-transform: uppercase; font-weight: 700; transition: all 0.2s; background: #111; color: #666; }
+  .session-btn.active { background: #f97316; color: #000; }
+
+  .exercise { background: #0e0e0e; border-radius: 8px; padding: 14px; margin-bottom: 10px; border: 1px solid #1a1a1a; display: flex; gap: 12px; align-items: flex-start; }
+  .ex-num { width: 28px; height: 28px; border-radius: 50%; background: #1a1a1a; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 11px; color: #f97316; font-family: monospace; font-weight: 700; }
+  .ex-name { font-size: 14px; font-weight: 700; color: #fff; }
+  .ex-tags { display: flex; gap: 8px; margin-top: 6px; flex-wrap: wrap; }
+  .ex-note { font-size: 12px; color: #666; margin-top: 6px; font-style: italic; }
+
+  .macro-card { border-radius: 8px; padding: 20px; margin-bottom: 14px; }
+  .macro-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 12px; }
+  .macro-kcal { font-size: 22px; font-weight: 700; }
+  .macro-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+  .macro-item { background: #0a0a0a; border-radius: 6px; padding: 10px 12px; text-align: center; }
+  .macro-val { font-size: 16px; font-weight: 700; }
+  .macro-label { font-size: 10px; color: #555; letter-spacing: 1px; font-family: monospace; text-transform: uppercase; }
+  .macro-note { font-size: 12px; color: #888; font-style: italic; border-top: 1px solid #1a1a1a; padding-top: 10px; }
+
+  .supp-card { background: #0e0e0e; border-radius: 8px; padding: 18px; margin-bottom: 12px; }
+  .supp-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
+  .supp-name { font-size: 15px; font-weight: 700; color: #fff; }
+  .supp-dose { font-size: 12px; font-family: monospace; margin-top: 2px; }
+  .supp-timing { background: #111; border-radius: 6px; padding: 8px 12px; margin-bottom: 8px; font-size: 12px; color: #aaa; }
+  .supp-note { font-size: 12px; color: #666; font-style: italic; }
+
+  .timeline-item { display: flex; gap: 16px; margin-bottom: 16px; }
+  .timeline-bar { width: 3px; border-radius: 2px; min-height: 60px; flex-shrink: 0; margin-top: 4px; }
+
+  .rule-card { background: #0a0a0a; border-radius: 8px; padding: 14px; margin-bottom: 10px; border: 1px solid #1a1a1a; }
+  .rule-trigger { font-size: 12px; color: #f97316; font-family: monospace; margin-bottom: 6px; }
+  .rule-action { font-size: 13px; color: #888; }
+
+  .day-card { background: #0a0a0a; border-radius: 6px; padding: 10px 4px; text-align: center; }
+  .day-name { font-size: 13px; font-weight: 700; }
+  .day-label { font-size: 9px; color: #666; margin-top: 4px; text-transform: uppercase; letter-spacing: 0.5px; font-family: monospace; }
+
+  .alert-card { background: #111; border-radius: 8px; padding: 14px; margin-bottom: 20px; border: 1px solid #ef444433; }
+  .alert-title { font-size: 11px; color: #ef4444; letter-spacing: 2px; font-family: monospace; margin-bottom: 6px; }
+  .alert-text { font-size: 13px; color: #aaa; }
+
+  .tracking-item { background: #0e0e0e; border-radius: 8px; padding: 16px; margin-bottom: 12px; border: 1px solid #1a1a1a; display: flex; gap: 14px; }
+  .tracking-bar { width: 3px; border-radius: 2px; flex-shrink: 0; }
+
+  .whey-block { background: #0a0a0a; border-radius: 6px; padding: 12px 14px; margin-bottom: 8px; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-label">Programme · 2025</div>
+  <h1>Recomposition<br><span>Athlétique</span></h1>
+  <div class="stats-row">
+    <div><div class="stat-val">80.4 kg</div><div class="stat-label">Poids actuel</div></div>
+    <div><div class="stat-val">25% MG</div><div class="stat-label">Masse grasse</div></div>
+    <div><div class="stat-val">70 kg</div><div class="stat-label">Objectif</div></div>
+    <div><div class="stat-val">15% MG</div><div class="stat-label">Cible</div></div>
+  </div>
+</div>
+
+<div class="tabs">
+  <button class="tab active" onclick="showTab('profil')">Profil</button>
+  <button class="tab" onclick="showTab('macros')">Macros</button>
+  <button class="tab" onclick="showTab('programme')">Programme</button>
+  <button class="tab" onclick="showTab('complements')">Compléments</button>
+  <button class="tab" onclick="showTab('suivi')">Suivi</button>
+</div>
+
+<div class="content">
+
+  <!-- PROFIL -->
+  <div id="profil" class="panel active">
+    <div class="section">
+      <div class="section-title">Analyse composition corporelle</div>
+      <div class="grid-2">
+        <div class="card" style="border-color:#ef444422">
+          <div style="font-size:18px;font-weight:700;color:#ef4444">20.1 kg</div>
+          <div style="font-size:11px;color:#666;margin-top:2px;letter-spacing:1px;text-transform:uppercase;font-family:monospace">Masse grasse (25%)</div>
+          <div class="bar"><div class="bar-fill" style="background:#ef4444;width:25%"></div></div>
+        </div>
+        <div class="card" style="border-color:#10b98122">
+          <div style="font-size:18px;font-weight:700;color:#10b981">60.3 kg</div>
+          <div style="font-size:11px;color:#666;margin-top:2px;letter-spacing:1px;text-transform:uppercase;font-family:monospace">Masse maigre (75%)</div>
+          <div class="bar"><div class="bar-fill" style="background:#10b981;width:75%"></div></div>
+        </div>
+        <div class="card" style="border-color:#3b82f622">
+          <div style="font-size:18px;font-weight:700;color:#3b82f6">33.1 kg</div>
+          <div style="font-size:11px;color:#666;margin-top:2px;letter-spacing:1px;text-transform:uppercase;font-family:monospace">Masse musculaire (41%)</div>
+          <div class="bar"><div class="bar-fill" style="background:#3b82f6;width:41%"></div></div>
+        </div>
+        <div class="card" style="border-color:#8b5cf622">
+          <div style="font-size:18px;font-weight:700;color:#8b5cf6">4.9 kg</div>
+          <div style="font-size:11px;color:#666;margin-top:2px;letter-spacing:1px;text-transform:uppercase;font-family:monospace">Masse osseuse (6%)</div>
+          <div class="bar"><div class="bar-fill" style="background:#8b5cf6;width:6%"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Données Garmin</div>
+      <div class="grid-3">
+        <div class="card" style="text-align:center">
+          <div style="font-size:18px;font-weight:700;color:#f97316">43 bpm</div>
+          <div style="font-size:10px;color:#555;margin-top:4px;letter-spacing:1px;text-transform:uppercase;font-family:monospace">FC repos</div>
+        </div>
+        <div class="card" style="text-align:center">
+          <div style="font-size:18px;font-weight:700;color:#10b981">48</div>
+          <div style="font-size:10px;color:#555;margin-top:4px;letter-spacing:1px;text-transform:uppercase;font-family:monospace">VO2max</div>
+        </div>
+        <div class="card" style="text-align:center">
+          <div style="font-size:18px;font-weight:700;color:#3b82f6">87/100</div>
+          <div style="font-size:10px;color:#555;margin-top:4px;letter-spacing:1px;text-transform:uppercase;font-family:monospace">Score sommeil</div>
+        </div>
+        <div class="card" style="text-align:center">
+          <div style="font-size:18px;font-weight:700;color:#8b5cf6">7h29</div>
+          <div style="font-size:10px;color:#555;margin-top:4px;letter-spacing:1px;text-transform:uppercase;font-family:monospace">Durée sommeil</div>
+        </div>
+        <div class="card" style="text-align:center">
+          <div style="font-size:18px;font-weight:700;color:#10b981">Optimal</div>
+          <div style="font-size:10px;color:#555;margin-top:4px;letter-spacing:1px;text-transform:uppercase;font-family:monospace">Charge entraîn.</div>
+        </div>
+        <div class="card" style="text-align:center">
+          <div style="font-size:18px;font-weight:700;color:#f97316">Productif</div>
+          <div style="font-size:10px;color:#555;margin-top:4px;letter-spacing:1px;text-transform:uppercase;font-family:monospace">Statut</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Objectif & Timeline</div>
+      <div class="timeline-item">
+        <div class="timeline-bar" style="background:#f97316"></div>
+        <div>
+          <div style="font-size:11px;color:#f97316;letter-spacing:2px;font-family:monospace;text-transform:uppercase">Mois 1-2</div>
+          <div style="font-size:14px;color:#e8e0d8;margin-top:4px"><strong style="color:#fff">Bench :</strong> 100 → 105 kg</div>
+          <div style="font-size:14px;color:#e8e0d8"><strong style="color:#fff">Corps :</strong> -1.5 kg gras, composition qui s'améliore</div>
+          <div style="font-size:12px;color:#666;margin-top:4px;font-style:italic">Ancrer les habitudes macros + progression linéaire bench</div>
+        </div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-bar" style="background:#3b82f6"></div>
+        <div>
+          <div style="font-size:11px;color:#3b82f6;letter-spacing:2px;font-family:monospace;text-transform:uppercase">Mois 3-4</div>
+          <div style="font-size:14px;color:#e8e0d8;margin-top:4px"><strong style="color:#fff">Bench :</strong> 105 → 110 kg</div>
+          <div style="font-size:14px;color:#e8e0d8"><strong style="color:#fff">Corps :</strong> -3 kg gras cumulés</div>
+          <div style="font-size:12px;color:#666;margin-top:4px;font-style:italic">Atteindre l'objectif bench. Ajuster calories si perte trop rapide.</div>
+        </div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-bar" style="background:#10b981"></div>
+        <div>
+          <div style="font-size:11px;color:#10b981;letter-spacing:2px;font-family:monospace;text-transform:uppercase">Mois 5-8</div>
+          <div style="font-size:14px;color:#e8e0d8;margin-top:4px"><strong style="color:#fff">Bench :</strong> Consolidation</div>
+          <div style="font-size:14px;color:#e8e0d8"><strong style="color:#fff">Corps :</strong> -8-10 kg gras → ~15% MG</div>
+          <div style="font-size:12px;color:#666;margin-top:4px;font-style:italic">Corps athlétique visible. Semi-marathon préparation.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MACROS -->
+  <div id="macros" class="panel">
+    <div class="card" style="margin-bottom:20px">
+      <div style="font-size:11px;color:#f97316;letter-spacing:2px;font-family:monospace;text-transform:uppercase;margin-bottom:8px">Maintenance estimée</div>
+      <div style="font-size:24px;font-weight:700;color:#fff">~2350 kcal/jour</div>
+      <div style="font-size:12px;color:#666;margin-top:4px">Basé sur ta dépense Garmin. Ajustable après 3 semaines de suivi.</div>
+    </div>
+
+    <div class="macro-card" style="background:#111;border:1px solid #f9731633">
+      <div class="macro-header">
+        <div>
+          <div style="font-size:11px;color:#f97316;letter-spacing:2px;font-family:monospace;text-transform:uppercase">Mardi & Jeudi</div>
+          <div style="font-size:16px;font-weight:700;color:#fff;margin-top:2px">Muscu</div>
+        </div>
+        <div class="macro-kcal" style="color:#f97316">2150 <span style="font-size:12px;color:#666">kcal</span></div>
+      </div>
+      <div class="macro-grid">
+        <div class="macro-item"><div class="macro-val" style="color:#10b981">175g</div><div class="macro-label">Protéines</div></div>
+        <div class="macro-item"><div class="macro-val" style="color:#3b82f6">195g</div><div class="macro-label">Glucides</div></div>
+        <div class="macro-item"><div class="macro-val" style="color:#f59e0b">75g</div><div class="macro-label">Lipides</div></div>
+      </div>
+      <div class="macro-note">Déficit ~250 kcal. Whey post-séance.</div>
+    </div>
+
+    <div class="macro-card" style="background:#111;border:1px solid #3b82f633">
+      <div class="macro-header">
+        <div>
+          <div style="font-size:11px;color:#3b82f6;letter-spacing:2px;font-family:monospace;text-transform:uppercase">Lundi — Run court</div>
+          <div style="font-size:16px;font-weight:700;color:#fff;margin-top:2px">Run court</div>
+        </div>
+        <div class="macro-kcal" style="color:#3b82f6">2200 <span style="font-size:12px;color:#666">kcal</span></div>
+      </div>
+      <div class="macro-grid">
+        <div class="macro-item"><div class="macro-val" style="color:#10b981">175g</div><div class="macro-label">Protéines</div></div>
+        <div class="macro-item"><div class="macro-val" style="color:#3b82f6">210g</div><div class="macro-label">Glucides</div></div>
+        <div class="macro-item"><div class="macro-val" style="color:#f59e0b">72g</div><div class="macro-label">Lipides</div></div>
+      </div>
+      <div class="macro-note">Déficit modéré. Run facile = pas besoin de surcharger en glucides.</div>
+    </div>
+
+    <div class="macro-card" style="background:#111;border:1px solid #06b6d433">
+      <div class="macro-header">
+        <div>
+          <div style="font-size:11px;color:#06b6d4;letter-spacing:2px;font-family:monospace;text-transform:uppercase">Mercredi — Fractionné ⚡</div>
+          <div style="font-size:16px;font-weight:700;color:#fff;margin-top:2px">Fractionné</div>
+        </div>
+        <div class="macro-kcal" style="color:#06b6d4">2300 <span style="font-size:12px;color:#666">kcal</span></div>
+      </div>
+      <div class="macro-grid">
+        <div class="macro-item"><div class="macro-val" style="color:#10b981">175g</div><div class="macro-label">Protéines</div></div>
+        <div class="macro-item"><div class="macro-val" style="color:#06b6d4">230g</div><div class="macro-label">Glucides</div></div>
+        <div class="macro-item"><div class="macro-val" style="color:#f59e0b">72g</div><div class="macro-label">Lipides</div></div>
+      </div>
+      <div class="macro-note">⚡ +30g glucides vs run court. Séance haute intensité = glycogène prioritaire. Sous-alimenter ce jour = séance nulle.</div>
+    </div>
+
+    <div class="macro-card" style="background:#111;border:1px solid #10b98133">
+      <div class="macro-header">
+        <div>
+          <div style="font-size:11px;color:#10b981;letter-spacing:2px;font-family:monospace;text-transform:uppercase">Vendredi</div>
+          <div style="font-size:16px;font-weight:700;color:#fff;margin-top:2px">Run long</div>
+        </div>
+        <div class="macro-kcal" style="color:#10b981">2400 <span style="font-size:12px;color:#666">kcal</span></div>
+      </div>
+      <div class="macro-grid">
+        <div class="macro-item"><div class="macro-val" style="color:#10b981">175g</div><div class="macro-label">Protéines</div></div>
+        <div class="macro-item"><div class="macro-val" style="color:#3b82f6">255g</div><div class="macro-label">Glucides</div></div>
+        <div class="macro-item"><div class="macro-val" style="color:#f59e0b">80g</div><div class="macro-label">Lipides</div></div>
+      </div>
+      <div class="macro-note">Maintenance. Pas de déficit ce jour.</div>
+    </div>
+
+    <div class="macro-card" style="background:#111;border:1px solid #8b5cf633">
+      <div class="macro-header">
+        <div>
+          <div style="font-size:11px;color:#8b5cf6;letter-spacing:2px;font-family:monospace;text-transform:uppercase">Samedi & Dimanche</div>
+          <div style="font-size:16px;font-weight:700;color:#fff;margin-top:2px">Repos</div>
+        </div>
+        <div class="macro-kcal" style="color:#8b5cf6">1900 <span style="font-size:12px;color:#666">kcal</span></div>
+      </div>
+      <div class="macro-grid">
+        <div class="macro-item"><div class="macro-val" style="color:#10b981">175g</div><div class="macro-label">Protéines</div></div>
+        <div class="macro-item"><div class="macro-val" style="color:#3b82f6">120g</div><div class="macro-label">Glucides</div></div>
+        <div class="macro-item"><div class="macro-val" style="color:#f59e0b">65g</div><div class="macro-label">Lipides</div></div>
+      </div>
+      <div class="macro-note">Déficit ~450 kcal. Miser sur aliments rassasiants.</div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Protocole pré-run — Performance</div>
+      <div class="whey-block">
+        <span style="color:#3b82f6;font-weight:700">Run court (Lundi) :</span>
+        <span style="font-size:13px;color:#aaa"> 1-2h avant → repas normal glucidique (riz, flocons, pain). Pas besoin de rituel particulier.</span>
+      </div>
+      <div class="whey-block">
+        <span style="color:#06b6d4;font-weight:700">Fractionné (Mercredi) ⚡ :</span>
+        <span style="font-size:13px;color:#aaa"> 2h avant → repas riche en glucides (100-120g). 30 min avant → 30-40g glucides rapides (banane, dattes, pain blanc). C'est la séance qui fait progresser — elle doit être de qualité.</span>
+      </div>
+      <div class="whey-block">
+        <span style="color:#10b981;font-weight:700">Run long (Vendredi) :</span>
+        <span style="font-size:13px;color:#aaa"> 2-3h avant → repas complet. Si > 1h15 de course : 30-40g glucides toutes les 40-45 min pendant l'effort (gel, dattes, banane).</span>
+      </div>
+      <div style="background:#06b6d411;border:1px solid #06b6d433;border-radius:6px;padding:12px 14px;margin-top:8px;font-size:12px;color:#888;font-style:italic">
+        💡 La perf run s'améliorera aussi mécaniquement via la recompo : -5 kg de gras = environ -30 sec/km à même effort cardio.
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Whey Isolate — Intégration</div>
+      <div class="whey-block">
+        <span style="color:#f97316;font-weight:700">Jours muscu (Ma/J) :</span>
+        <span style="font-size:13px;color:#aaa"> 1 scoop post-séance dans les 30-60 min. Priorité absolue.</span>
+      </div>
+      <div class="whey-block">
+        <span style="color:#3b82f6;font-weight:700">Jours run :</span>
+        <span style="font-size:13px;color:#aaa"> En collation si les protéines alimentaires n'atteignent pas 175g en fin de journée.</span>
+      </div>
+      <div class="whey-block">
+        <span style="color:#8b5cf6;font-weight:700">Jours repos :</span>
+        <span style="font-size:13px;color:#aaa"> Optionnel. Miser sur sources alimentaires complètes (œufs, viande, fromage blanc 0%).</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- PROGRAMME -->
+  <div id="programme" class="panel">
+    <div class="session-btns">
+      <button class="session-btn active" id="btnA" onclick="showSession('A')">Séance A</button>
+      <button class="session-btn" id="btnB" onclick="showSession('B')">Séance B</button>
+    </div>
+
+    <div id="sessionA">
+      <div class="card" style="border-color:#f9731633;margin-bottom:20px">
+        <div style="font-size:11px;color:#f97316;letter-spacing:2px;font-family:monospace;text-transform:uppercase">Mardi</div>
+        <div style="font-size:18px;font-weight:700;color:#fff;margin-top:4px">Upper A — Force</div>
+        <div style="font-size:12px;color:#888;margin-top:6px;font-style:italic">Bench press progression vers 110 kg. Séance courte, dense, lourde.</div>
+      </div>
+      <div class="exercise">
+        <div class="ex-num">1</div>
+        <div>
+          <div class="ex-name">Bench Press barre</div>
+          <div class="ex-tags">
+            <span class="badge" style="background:#f9731622;color:#f97316">5×3</span>
+            <span class="badge" style="background:#3b82f622;color:#3b82f6">85-90% 1RM</span>
+            <span class="badge" style="background:#1a1a1a;color:#666">repos 3 min</span>
+          </div>
+          <div class="ex-note">Moteur principal. +2.5 kg toutes les 2 semaines.</div>
+        </div>
+      </div>
+      <div class="exercise">
+        <div class="ex-num">2</div>
+        <div>
+          <div class="ex-name">Rowing barre pronation</div>
+          <div class="ex-tags">
+            <span class="badge" style="background:#f9731622;color:#f97316">4×6</span>
+            <span class="badge" style="background:#3b82f622;color:#3b82f6">Lourd</span>
+            <span class="badge" style="background:#1a1a1a;color:#666">repos 2 min</span>
+          </div>
+          <div class="ex-note">Équilibre poussé/tiré. Essentiel pour les épaules.</div>
+        </div>
+      </div>
+      <div class="exercise">
+        <div class="ex-num">3</div>
+        <div>
+          <div class="ex-name">Développé militaire barre</div>
+          <div class="ex-tags">
+            <span class="badge" style="background:#f9731622;color:#f97316">4×6</span>
+            <span class="badge" style="background:#3b82f622;color:#3b82f6">Lourd</span>
+            <span class="badge" style="background:#1a1a1a;color:#666">repos 2 min</span>
+          </div>
+          <div class="ex-note">Force antérieure complète.</div>
+        </div>
+      </div>
+      <div class="exercise">
+        <div class="ex-num">4</div>
+        <div>
+          <div class="ex-name">Tractions lestées</div>
+          <div class="ex-tags">
+            <span class="badge" style="background:#f9731622;color:#f97316">4×6</span>
+            <span class="badge" style="background:#3b82f622;color:#3b82f6">+5 à +10 kg</span>
+            <span class="badge" style="background:#1a1a1a;color:#666">repos 2 min</span>
+          </div>
+          <div class="ex-note">Si non disponible : tirage poulie haute lourd.</div>
+        </div>
+      </div>
+      <div class="exercise">
+        <div class="ex-num">5</div>
+        <div>
+          <div class="ex-name">Dips lestés</div>
+          <div class="ex-tags">
+            <span class="badge" style="background:#f9731622;color:#f97316">3×8</span>
+            <span class="badge" style="background:#3b82f622;color:#3b82f6">+5 à +10 kg</span>
+            <span class="badge" style="background:#1a1a1a;color:#666">repos 90 sec</span>
+          </div>
+          <div class="ex-note">Triceps + pec bas.</div>
+        </div>
+      </div>
+      <div class="exercise">
+        <div class="ex-num">6</div>
+        <div>
+          <div class="ex-name">Face pull câble</div>
+          <div class="ex-tags">
+            <span class="badge" style="background:#f9731622;color:#f97316">3×15</span>
+            <span class="badge" style="background:#3b82f622;color:#3b82f6">Modéré</span>
+            <span class="badge" style="background:#1a1a1a;color:#666">repos 60 sec</span>
+          </div>
+          <div class="ex-note">Santé rotateurs épaules. Ne pas skipper.</div>
+        </div>
+      </div>
+      <div class="exercise">
+        <div class="ex-num">7</div>
+        <div>
+          <div class="ex-name">Curl biceps barre EZ</div>
+          <div class="ex-tags">
+            <span class="badge" style="background:#f9731622;color:#f97316">3×8</span>
+            <span class="badge" style="background:#3b82f622;color:#3b82f6">Lourd</span>
+            <span class="badge" style="background:#1a1a1a;color:#666">repos 90 sec</span>
+          </div>
+          <div class="ex-note">Fin de séance, lourd.</div>
+        </div>
+      </div>
+    </div>
+
+    <div id="sessionB" style="display:none">
+      <div class="card" style="border-color:#f9731633;margin-bottom:20px">
+        <div style="font-size:11px;color:#f97316;letter-spacing:2px;font-family:monospace;text-transform:uppercase">Jeudi</div>
+        <div style="font-size:18px;font-weight:700;color:#fff;margin-top:4px">Upper B — Hypertrophie</div>
+        <div style="font-size:12px;color:#888;margin-top:6px;font-style:italic">Volume, pump, isolation. Construire la masse qui entourera la force.</div>
+      </div>
+      <div class="exercise">
+        <div class="ex-num">1</div>
+        <div>
+          <div class="ex-name">Développé incliné haltères</div>
+          <div class="ex-tags">
+            <span class="badge" style="background:#f9731622;color:#f97316">4×10-12</span>
+            <span class="badge" style="background:#3b82f622;color:#3b82f6">Modéré-lourd</span>
+            <span class="badge" style="background:#1a1a1a;color:#666">repos 90 sec</span>
+          </div>
+          <div class="ex-note">Activation pec haut. Contrôle excentrique.</div>
+        </div>
+      </div>
+      <div class="exercise">
+        <div class="ex-num">2</div>
+        <div>
+          <div class="ex-name">Tirage poulie haute prise large</div>
+          <div class="ex-tags">
+            <span class="badge" style="background:#f9731622;color:#f97316">4×12</span>
+            <span class="badge" style="background:#3b82f622;color:#3b82f6">Modéré</span>
+            <span class="badge" style="background:#1a1a1a;color:#666">repos 75 sec</span>
+          </div>
+          <div class="ex-note">Volume dorsal. Full ROM.</div>
+        </div>
+      </div>
+      <div class="exercise">
+        <div class="ex-num">3</div>
+        <div>
+          <div class="ex-name">Rowing câble assis</div>
+          <div class="ex-tags">
+            <span class="badge" style="background:#f9731622;color:#f97316">3×12</span>
+            <span class="badge" style="background:#3b82f622;color:#3b82f6">Modéré</span>
+            <span class="badge" style="background:#1a1a1a;color:#666">repos 75 sec</span>
+          </div>
+          <div class="ex-note">Épaisseur dorsale.</div>
+        </div>
+      </div>
+      <div class="exercise">
+        <div class="ex-num">4</div>
+        <div>
+          <div class="ex-name">Élévations latérales haltères</div>
+          <div class="ex-tags">
+            <span class="badge" style="background:#f9731622;color:#f97316">4×15-20</span>
+            <span class="badge" style="background:#3b82f622;color:#3b82f6">Léger</span>
+            <span class="badge" style="background:#1a1a1a;color:#666">repos 60 sec</span>
+          </div>
+          <div class="ex-note">Épaules larges = corps athlétique visible.</div>
+        </div>
+      </div>
+      <div class="exercise">
+        <div class="ex-num">5</div>
+        <div>
+          <div class="ex-name">Oiseau câble ou machine</div>
+          <div class="ex-tags">
+            <span class="badge" style="background:#f9731622;color:#f97316">3×15</span>
+            <span class="badge" style="background:#3b82f622;color:#3b82f6">Léger</span>
+            <span class="badge" style="background:#1a1a1a;color:#666">repos 60 sec</span>
+          </div>
+          <div class="ex-note">Arrière épaule. Posture.</div>
+        </div>
+      </div>
+      <div class="exercise">
+        <div class="ex-num">6</div>
+        <div>
+          <div class="ex-name">Triceps poulie haute</div>
+          <div class="ex-tags">
+            <span class="badge" style="background:#f9731622;color:#f97316">3×15</span>
+            <span class="badge" style="background:#3b82f622;color:#3b82f6">Modéré</span>
+            <span class="badge" style="background:#1a1a1a;color:#666">repos 60 sec</span>
+          </div>
+          <div class="ex-note">Volume triceps.</div>
+        </div>
+      </div>
+      <div class="exercise">
+        <div class="ex-num">7</div>
+        <div>
+          <div class="ex-name">Curl marteau haltères</div>
+          <div class="ex-tags">
+            <span class="badge" style="background:#f9731622;color:#f97316">3×12</span>
+            <span class="badge" style="background:#3b82f622;color:#3b82f6">Modéré</span>
+            <span class="badge" style="background:#1a1a1a;color:#666">repos 60 sec</span>
+          </div>
+          <div class="ex-note">Brachial + avant-bras.</div>
+        </div>
+      </div>
+      <div class="exercise">
+        <div class="ex-num">8</div>
+        <div>
+          <div class="ex-name">Ab wheel / Crunch lesté</div>
+          <div class="ex-tags">
+            <span class="badge" style="background:#f9731622;color:#f97316">3×15</span>
+            <span class="badge" style="background:#3b82f622;color:#3b82f6">Progression</span>
+            <span class="badge" style="background:#1a1a1a;color:#666">repos 60 sec</span>
+          </div>
+          <div class="ex-note">Core solide = meilleur transfert force.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section" style="margin-top:24px">
+      <div class="section-title">Planning hebdomadaire</div>
+      <div class="grid-7">
+        <div class="day-card" style="border:1px solid #3b82f633"><div class="day-name" style="color:#3b82f6">L</div><div class="day-label">Run</div></div>
+        <div class="day-card" style="border:1px solid #f9731633"><div class="day-name" style="color:#f97316">Ma</div><div class="day-label">Upper A</div></div>
+        <div class="day-card" style="border:1px solid #3b82f633"><div class="day-name" style="color:#3b82f6">Me</div><div class="day-label">Run</div></div>
+        <div class="day-card" style="border:1px solid #f9731633"><div class="day-name" style="color:#f97316">J</div><div class="day-label">Upper B</div></div>
+        <div class="day-card" style="border:1px solid #3b82f633"><div class="day-name" style="color:#3b82f6">V</div><div class="day-label">Run</div></div>
+        <div class="day-card" style="border:1px solid #33333333"><div class="day-name" style="color:#444">S</div><div class="day-label">Repos</div></div>
+        <div class="day-card" style="border:1px solid #33333333"><div class="day-name" style="color:#444">D</div><div class="day-label">Repos</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- COMPLÉMENTS -->
+  <div id="complements" class="panel">
+    <div class="alert-card">
+      <div class="alert-title">⚠️ MANQUANTS DANS TA STACK</div>
+      <div class="alert-text">D3+K2 et Zinc sont absents. Ce sont les 2 ajouts les plus impactants pour ta recompo et ta récupération.</div>
+    </div>
+
+    <div class="supp-card" style="border:1px solid #f9731622">
+      <div class="supp-header">
+        <div><div class="supp-name">Créatine</div><div class="supp-dose" style="color:#f97316">5g/jour</div></div>
+      </div>
+      <div class="supp-timing"><span style="font-size:10px;color:#666;font-family:monospace;text-transform:uppercase;letter-spacing:1px">Timing : </span>Post-workout ou avec n'importe quel repas</div>
+      <div class="supp-note">Le timing n'est pas critique. Consistance > moment.</div>
+    </div>
+
+    <div class="supp-card" style="border:1px solid #8b5cf622">
+      <div class="supp-header">
+        <div><div class="supp-name">Magnésium glycinate</div><div class="supp-dose" style="color:#8b5cf6">300-400 mg</div></div>
+      </div>
+      <div class="supp-timing"><span style="font-size:10px;color:#666;font-family:monospace;text-transform:uppercase;letter-spacing:1px">Timing : </span>Le soir, 1h avant coucher</div>
+      <div class="supp-note">Privilégier la forme glycinate (meilleure absorption, moins laxatif que oxyde).</div>
+    </div>
+
+    <div class="supp-card" style="border:1px solid #78716c22">
+      <div class="supp-header">
+        <div><div class="supp-name">Shilajit</div><div class="supp-dose" style="color:#a8a29e">Selon produit</div></div>
+      </div>
+      <div class="supp-timing"><span style="font-size:10px;color:#666;font-family:monospace;text-transform:uppercase;letter-spacing:1px">Timing : </span>Le matin à jeun ou avec petit-déj</div>
+      <div class="supp-note">Adaptogène, microminéraux. Éviter le soir (peut perturber le sommeil).</div>
+    </div>
+
+    <div class="supp-card" style="border:1px solid #3b82f622">
+      <div class="supp-header">
+        <div><div class="supp-name">Oméga-3</div><div class="supp-dose" style="color:#3b82f6">2-3g EPA+DHA/jour</div></div>
+      </div>
+      <div class="supp-timing"><span style="font-size:10px;color:#666;font-family:monospace;text-transform:uppercase;letter-spacing:1px">Timing : </span>Avec le repas le plus riche en graisses</div>
+      <div class="supp-note">Anti-inflammatoire. Important avec 3 runs/semaine.</div>
+    </div>
+
+    <div class="supp-card" style="border:1px solid #10b98122">
+      <div class="supp-header">
+        <div><div class="supp-name">Whey Isolate</div><div class="supp-dose" style="color:#10b981">1 scoop = 25g protéines</div></div>
+      </div>
+      <div class="supp-timing"><span style="font-size:10px;color:#666;font-family:monospace;text-transform:uppercase;letter-spacing:1px">Timing : </span>Post-séance muscu ou pour combler le déficit protéique</div>
+      <div class="supp-note">Priorité post-muscu. Jours run : en collation si besoin d'atteindre 175g.</div>
+    </div>
+
+    <div class="supp-card" style="border:1px solid #ef444433">
+      <div class="supp-header">
+        <div><div class="supp-name">Vitamine D3 + K2</div><div class="supp-dose" style="color:#ef4444">2000-4000 UI D3 + 100µg K2</div></div>
+        <span class="tag">À AJOUTER</span>
+      </div>
+      <div class="supp-timing"><span style="font-size:10px;color:#666;font-family:monospace;text-transform:uppercase;letter-spacing:1px">Timing : </span>Avec un repas gras (déj ou dîner)</div>
+      <div class="supp-note">Déficit quasi systématique en France. Impacte testostérone, immunité, récupération.</div>
+    </div>
+
+    <div class="supp-card" style="border:1px solid #ef444433">
+      <div class="supp-header">
+        <div><div class="supp-name">Zinc</div><div class="supp-dose" style="color:#ef4444">15-25 mg/jour</div></div>
+        <span class="tag">À AJOUTER</span>
+      </div>
+      <div class="supp-timing"><span style="font-size:10px;color:#666;font-family:monospace;text-transform:uppercase;letter-spacing:1px">Timing : </span>Le soir avec le repas (pas avec le fer)</div>
+      <div class="supp-note">Synergique shilajit. Testostérone, synthèse protéique, immunité.</div>
+    </div>
+  </div>
+
+  <!-- SUIVI -->
+  <div id="suivi" class="panel">
+    <div class="section">
+      <div class="section-title">4 métriques, rien de plus</div>
+      <div class="tracking-item">
+        <div class="tracking-bar" style="background:#f97316"></div>
+        <div>
+          <div style="font-size:14px;font-weight:700;color:#fff">Poids à jeun</div>
+          <div style="font-size:11px;color:#555;letter-spacing:1px;font-family:monospace;text-transform:uppercase;margin-top:2px">Chaque matin</div>
+          <div style="font-size:13px;color:#888;margin-top:6px;line-height:1.5">Calculer la moyenne sur 7 jours. C'est l'indicateur — pas le poids du jour.</div>
+        </div>
+      </div>
+      <div class="tracking-item">
+        <div class="tracking-bar" style="background:#3b82f6"></div>
+        <div>
+          <div style="font-size:14px;font-weight:700;color:#fff">Perf bench</div>
+          <div style="font-size:11px;color:#555;letter-spacing:1px;font-family:monospace;text-transform:uppercase;margin-top:2px">Chaque séance A</div>
+          <div style="font-size:13px;color:#888;margin-top:6px;line-height:1.5">Charge × reps. Si tu stagnes 2 semaines → ajuster le programme, pas les calories.</div>
+        </div>
+      </div>
+      <div class="tracking-item">
+        <div class="tracking-bar" style="background:#10b981"></div>
+        <div>
+          <div style="font-size:14px;font-weight:700;color:#fff">Tour de taille</div>
+          <div style="font-size:11px;color:#555;letter-spacing:1px;font-family:monospace;text-transform:uppercase;margin-top:2px">1x/semaine</div>
+          <div style="font-size:13px;color:#888;margin-top:6px;line-height:1.5">Au nombril, le matin. Baisse = perte de gras réelle, même si poids stable.</div>
+        </div>
+      </div>
+      <div class="tracking-item">
+        <div class="tracking-bar" style="background:#8b5cf6"></div>
+        <div>
+          <div style="font-size:14px;font-weight:700;color:#fff">Calories</div>
+          <div style="font-size:11px;color:#555;letter-spacing:1px;font-family:monospace;text-transform:uppercase;margin-top:2px">Chaque jour</div>
+          <div style="font-size:13px;color:#888;margin-top:6px;line-height:1.5">Commence à peser 3 semaines pour calibrer ton œil. Ensuite l'œil suffit.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Règles d'ajustement</div>
+      <div class="rule-card">
+        <div class="rule-trigger">SI : Poids stagne 3 semaines</div>
+        <div class="rule-action">→ Réduire de 100 kcal sur les jours repos. Pas toucher aux jours muscu.</div>
+      </div>
+      <div class="rule-card">
+        <div class="rule-trigger">SI : Perte > 1 kg/semaine</div>
+        <div class="rule-action">→ Augmenter de 150 kcal sur jours run. Protéger la masse musculaire.</div>
+      </div>
+      <div class="rule-card">
+        <div class="rule-trigger">SI : Bench stagne 2 semaines</div>
+        <div class="rule-action">→ Vérifier le sommeil et les glucides pré-séance. Pas le programme.</div>
+      </div>
+      <div class="rule-card">
+        <div class="rule-trigger">SI : Fatigue excessive</div>
+        <div class="rule-action">→ Body Battery < 30 deux jours de suite → transformer un run en repos actif.</div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Indicateurs de succès — Semaine 1</div>
+      <div class="card">
+        <div style="font-size:13px;color:#aaa;line-height:2.2">
+          ✓ Tu atteins 175g de protéines au moins 5 jours sur 7<br>
+          ✓ Tu fais les 2 séances Upper sans en sauter une<br>
+          ✓ Tu notes ta charge bench à chaque séance A<br>
+          ✓ Tu te pèses chaque matin (même si ça monte parfois)
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+function showTab(id) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  event.target.classList.add('active');
+}
+function showSession(s) {
+  document.getElementById('sessionA').style.display = s === 'A' ? 'block' : 'none';
+  document.getElementById('sessionB').style.display = s === 'B' ? 'block' : 'none';
+  document.getElementById('btnA').classList.toggle('active', s === 'A');
+  document.getElementById('btnB').classList.toggle('active', s === 'B');
+}
+</script>
+</body>
+</html>

@@ -86,7 +86,7 @@
   <button class="tab active" onclick="showTab('poids',this)">Poids</button>
   <button class="tab" onclick="showTab('macros',this)">Macros</button>
   <button class="tab" onclick="showTab('bench',this)">Bench</button>
-  <button class="tab" onclick="showTab('semaine',this)">Semaine</button>
+  <button class="tab" onclick="showTab('semaine',this)">Semaine</button><button class="tab" onclick="showTab('historique',this)">Historique</button>
 </div>
 <div class="content">
   <div id="tab-poids" class="panel active">
@@ -197,6 +197,12 @@
     </div>
   </div>
 </div>
+  <div id="tab-historique" class="panel">
+  <div class="card">
+    <div class="lbl">7 derniers jours</div>
+    <div id="hist-list"></div>
+  </div>
+</div>
 <script>
 const TARGETS={muscu:{kcal:2150,p:175,c:195,f:75,label:'Muscu',color:'var(--orange)'},run_court:{kcal:2200,p:175,c:210,f:72,label:'Run court',color:'var(--blue)'},fractionne:{kcal:2300,p:175,c:230,f:72,label:'Fractionné ⚡',color:'var(--cyan)'},run_long:{kcal:2400,p:175,c:255,f:80,label:'Run long',color:'var(--green)'},repos:{kcal:1900,p:175,c:120,f:65,label:'Repos',color:'var(--purple)'}};
 const WEEK_DAYS=[{key:'lun',label:'L',type:'Run',color:'#3b82f6'},{key:'mar',label:'Ma',type:'Upper A',color:'#f97316'},{key:'mer',label:'Me',type:'Frac.',color:'#06b6d4'},{key:'jeu',label:'J',type:'Upper B',color:'#f97316'},{key:'ven',label:'V',type:'Run L',color:'#10b981'},{key:'sam',label:'S',type:'Repos',color:'#444'},{key:'dim',label:'D',type:'Repos',color:'#444'}];
@@ -210,7 +216,32 @@ let weeks=load('weeks',{});
 function today(){return new Date().toISOString().split('T')[0];}
 function fmt(d){const[,m,day]=d.split('-');return`${day}/${m}`;}
 function weekKey(){const d=new Date();const s=new Date(d.setDate(d.getDate()-((d.getDay()+6)%7)));return s.toISOString().split('T')[0];}
-function showStatus(id,msg,ok){const el=document.getElementById(id);el.className=ok?'status-ok':'status-err';el.textContent=msg;setTimeout(()=>{el.textContent='';el.className='';},3000);}
+function renderHistorique(){
+  const keys=Object.keys(macros).sort().reverse().slice(0,7);
+  const el=document.getElementById('hist-list');
+  if(!keys.length){el.innerHTML='<div style="font-size:12px;color:var(--muted);text-align:center;padding:20px">Aucune donnée encore</div>';return;}
+  const LABELS={muscu:'Muscu',run_court:'Run court',fractionne:'Fractionné ⚡',run_long:'Run long',repos:'Repos'};
+  const COLORS={muscu:'var(--orange)',run_court:'var(--blue)',fractionne:'var(--cyan)',run_long:'var(--green)',repos:'var(--purple)'};
+  el.innerHTML=keys.map(d=>{
+    const m=macros[d];const t=TARGETS[m.dayType];
+    const [,mo,day]=d.split('-');
+    const pct=(v,tg)=>Math.min(100,Math.round(v/tg*100));
+    const color=(v,tg)=>v>=tg*0.95?'var(--green)':v>=tg*0.75?'#f59e0b':'var(--red)';
+    return`<div style="background:#0a0a0a;border-radius:8px;padding:14px;margin-bottom:10px;border:1px solid var(--border)">
+      <div style="display:flex;justify-content:space-between;margin-bottom:10px">
+        <div style="font-size:13px;font-weight:500;color:#fff">${day}/${mo}</div>
+        <div style="font-size:10px;color:${COLORS[m.dayType]};letter-spacing:1px;text-transform:uppercase">${LABELS[m.dayType]}</div>
+      </div>
+      ${[['Kcal',m.kcal,t.kcal,''],['Prot.',m.p,t.p,'g'],['Glu.',m.c,t.c,'g'],['Lip.',m.f,t.f,'g']].map(([label,val,tgt,unit])=>`
+        <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+          <span style="font-size:10px;color:var(--muted)">${label}</span>
+          <span style="font-size:10px;color:${color(val,tgt)}">${val}${unit}/${tgt}${unit} (${pct(val,tgt)}%)</span>
+        </div>
+        <div class="bar-wrap" style="margin-bottom:6px"><div class="bar-fill" style="background:${color(val,tgt)};width:${pct(val,tgt)}%"></div></div>
+      `).join('')}
+    </div>`;
+  }).join('');
+}
 function showTab(name,btn){document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));document.getElementById('tab-'+name).classList.add('active');btn.classList.add('active');}
 function savePoids(){const val=parseFloat(document.getElementById('poids-input').value);if(isNaN(val)){showStatus('poids-status','❌ Entre un poids valide',false);return;}weights[today()]=val;if(save('weights',weights)){document.getElementById('poids-input').value='';showStatus('poids-status','✓ Sauvegardé',true);renderPoids();updateHeader();}else{showStatus('poids-status','❌ Erreur',false);}}
 function renderPoids(){const sorted=Object.entries(weights).sort(([a],[b])=>a.localeCompare(b));const last=sorted.length?sorted[sorted.length-1][1]:null;const avg7=sorted.length>=2?(sorted.slice(-7).reduce((s,[,v])=>s+v,0)/Math.min(sorted.length,7)).toFixed(1):null;const diff=sorted.length>=2?(sorted[sorted.length-1][1]-sorted[0][1]).toFixed(1):null;document.getElementById('p-last').textContent=last?last+' kg':'—';document.getElementById('p-avg').textContent=avg7?avg7+' kg':'—';const de=document.getElementById('p-diff');de.textContent=diff?(diff>0?'+'+diff:diff)+' kg':'—';de.style.color=diff<0?'var(--green)':diff>0?'var(--red)':'var(--muted)';if(last){const pct=Math.max(0,Math.min(100,((80.4-last)/(80.4-70))*100));document.getElementById('obj-bar').style.width=pct+'%';document.getElementById('obj-pct').textContent=pct.toFixed(0)+'%';}const recent=sorted.slice(-30);if(recent.length>1){document.getElementById('chart-card').style.display='block';drawChart(recent);}if(sorted.length){document.getElementById('poids-hist-card').style.display='block';document.getElementById('poids-hist').innerHTML=sorted.slice().reverse().map(([d,v])=>`<div class="hist-row"><span class="hist-date">${fmt(d)}</span><span class="hist-val">${v} kg</span></div>`).join('');}}
@@ -224,7 +255,7 @@ function renderWeek(){const wk=weekKey();const current=weeks[wk]||{};const workD
 function toggleDay(key){const wk=weekKey();if(!weeks[wk])weeks[wk]={};weeks[wk][key]=!weeks[wk][key];save('weeks',weeks);renderWeek();}
 function resetWeek(){if(!confirm('Reset la semaine ?'))return;weeks[weekKey()]={};save('weeks',weeks);renderWeek();}
 function updateHeader(){const sorted=Object.entries(weights).sort(([a],[b])=>a.localeCompare(b));const last=sorted.length?sorted[sorted.length-1][1]:null;const avg7=sorted.length>=2?(sorted.slice(-7).reduce((s,[,v])=>s+v,0)/Math.min(sorted.length,7)).toFixed(1):null;document.getElementById('hdr-poids').textContent=last?last+' kg':'—';document.getElementById('hdr-avg').textContent=avg7?avg7+' kg':'—';const best=bench.length?Math.max(...bench.map(e=>e.charge)):null;document.getElementById('hdr-bench').textContent=best?best+' kg':'—';}
-renderPoids();renderMacros();renderBench();renderWeek();updateHeader();
+renderPoids();renderMacros();renderBench();renderWeek();renderHistorique();updateHeader();
 </script>
 </body>
 </html>
